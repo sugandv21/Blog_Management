@@ -4,7 +4,6 @@ import api from "../api/axios";
 
 const AuthContext = createContext(null);
 
-// Local fallback decoder (base64url -> JSON). No signature verification.
 function localDecodeJWT(token) {
   if (!token) return null;
   try {
@@ -25,7 +24,6 @@ function localDecodeJWT(token) {
   }
 }
 
-// wrapper that prefers jwtDecode but falls back to localDecodeJWT
 function safeDecode(token) {
   if (!token) return null;
   try {
@@ -89,3 +87,4 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   return useContext(AuthContext);
 }
+
