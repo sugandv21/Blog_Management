@@ -2,6 +2,7 @@ from rest_framework import viewsets, filters, permissions, generics, status
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+import django_filters
 from django.conf import settings
 from django.core.mail import send_mail
 
@@ -56,23 +57,47 @@ class RegisterView(generics.CreateAPIView):
         return Response(data, status=status.HTTP_201_CREATED, headers=headers)
 
 
+# -------------------------------------------------------------------
+# FilterSet for Post so query params are: ?author=<username>&date=YYYY-MM-DD
+# -------------------------------------------------------------------
+class PostFilter(django_filters.FilterSet):
+    """
+    Expose friendly query params:
+      - author -> author__username (case-insensitive exact)
+      - date   -> created date (YYYY-MM-DD)
+      - published -> boolean (existing)
+    """
+    author = django_filters.CharFilter(field_name="author__username", lookup_expr="iexact")
+    date = django_filters.DateFilter(method="filter_by_date")  # date = YYYY-MM-DD
+    published = django_filters.BooleanFilter(field_name="published")
+
+    class Meta:
+        model = Post
+        fields = ["author", "date", "published"]
+
+    def filter_by_date(self, queryset, name, value):
+        # value is a datetime.date from parsing YYYY-MM-DD
+        return queryset.filter(created__date=value)
+
+
 class PostViewSet(viewsets.ModelViewSet):
     """
     CRUD for posts. Accepts multipart/form-data for image uploads.
+    Supports filters:
+       ?author=<username>&date=YYYY-MM-DD&published=true
     """
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [IsOwnerOrReadOnly]
     parser_classes = [MultiPartParser, FormParser]  # allow file uploads
+
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ["author__username", "published"]
+    filterset_class = PostFilter
     search_fields = ["title", "body"]
     ordering_fields = ["created", "updated"]
 
     def perform_create(self, serializer):
-        # set author to current user
         serializer.save(author=self.request.user)
-
 
     def get_queryset(self):
         qs = Post.objects.all()
@@ -94,4 +119,3 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
-
