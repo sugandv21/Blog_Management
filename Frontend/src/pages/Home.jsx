@@ -36,7 +36,7 @@ function PostCard({ post }) {
 
       <p className="text-sm text-gray-500 mt-1">
         by {post.author?.username || "Unknown"} •{" "}
-        {new Date(post.created).toLocaleDateString()}
+        {post.created ? new Date(post.created).toLocaleDateString() : ""}
       </p>
 
       <p className="mt-2 text-gray-700">
@@ -58,20 +58,30 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Filters
+  const [author, setAuthor] = useState("");
+  const [date, setDate] = useState(""); // YYYY-MM-DD
+
   // 👇 how many posts per page (must match backend pagination)
   const pageSize = 3;
   const totalPages = Math.ceil(count / pageSize);
 
   useEffect(() => {
+    // fetch when page OR filters change
     fetchPosts(page);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+  }, [page, author, date]);
 
   async function fetchPosts(pageNum = 1) {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get(`posts/?page=${pageNum}`);
+      // Use axios params object so encoding is handled automatically
+      const params = { page: pageNum };
+      if (author) params.author = author;
+      if (date) params.date = date;
+
+      const res = await api.get("posts/", { params });
       setPosts(res.data.results || []);
       setCount(res.data.count ?? 0);
       setNext(res.data.next ?? null);
@@ -119,6 +129,27 @@ export default function Home() {
     return pages;
   }
 
+  // handlers for filter inputs: reset page to 1 when filter changes
+  function handleAuthorChange(e) {
+    setAuthor(e.target.value);
+    setPage(1);
+  }
+  function handleDateChange(e) {
+    setDate(e.target.value);
+    setPage(1);
+  }
+
+  function applyFilters() {
+    // simply trigger fetch via updating page to 1 (useEffect will run)
+    setPage(1);
+  }
+
+  function clearFilters() {
+    setAuthor("");
+    setDate("");
+    setPage(1);
+  }
+
   return (
     <div>
       {/* Banner Section */}
@@ -141,6 +172,38 @@ export default function Home() {
       </div>
 
       <div className="container mx-auto px-4">
+        {/* Filters */}
+        <div className="flex flex-wrap gap-4 mb-6 items-center">
+          <input
+            type="text"
+            placeholder="Filter by author (username)"
+            value={author}
+            onChange={handleAuthorChange}
+            className="border rounded-lg px-3 py-2"
+          />
+
+          <input
+            type="date"
+            value={date}
+            onChange={handleDateChange}
+            className="border rounded-lg px-3 py-2"
+          />
+
+          {/* <button
+            onClick={applyFilters}
+            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+          >
+            Apply Filters
+          </button> */}
+
+          <button
+            onClick={clearFilters}
+            className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300"
+          >
+            Clear
+          </button>
+        </div>
+
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {Array.from({ length: 4 }).map((_, i) => (
