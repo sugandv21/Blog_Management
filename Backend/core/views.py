@@ -57,9 +57,6 @@ class RegisterView(generics.CreateAPIView):
         return Response(data, status=status.HTTP_201_CREATED, headers=headers)
 
 
-# -------------------------------------------------------------------
-# FilterSet for Post so query params are: ?author=<username>&date=YYYY-MM-DD
-# -------------------------------------------------------------------
 class PostFilter(django_filters.FilterSet):
     """
     Expose friendly query params:
@@ -119,3 +116,4 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
