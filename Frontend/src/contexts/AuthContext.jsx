@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { jwtDecode } from "jwt-decode"; // keep your named import
+import { jwtDecode } from "jwt-decode"; 
 import api from "../api/axios";
 
 const AuthContext = createContext(null);
@@ -87,4 +87,5 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   return useContext(AuthContext);
 }
+
 
