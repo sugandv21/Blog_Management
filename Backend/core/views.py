@@ -1,4 +1,3 @@
-# core/views.py
 from rest_framework import viewsets, filters, permissions, generics, status
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
@@ -95,3 +94,4 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
